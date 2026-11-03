@@ -1,0 +1,31 @@
+const scenarios={
+website:{brief:'“Our website enquiries arrive by email. We copy them into a spreadsheet and sometimes miss a follow-up.”',offer:'Help connect an enquiry form to a simple follow-up workflow.',known:'Manual copying and missed follow-ups were stated.',unknown:'Enquiry volume, existing tools, budget, and whether a change is wanted.',fit:'A follow-up workflow may be relevant because manual transfer and missed follow-ups are stated in the sample brief.',question:'How do you currently decide who should respond to each enquiry?',draft:'You mentioned copying website enquiries into a spreadsheet and occasionally missing a follow-up. How do you decide who responds today? We help connect enquiry forms to simple follow-up workflows, and I’d like to understand whether that would be useful in your process.',reply:'“We already use a CRM, but the website form is not connected to it.”',next:'Ask which CRM they use and how the form is currently handled. Review integration options before suggesting a meeting or implementation.'},
+operations:{brief:'“Every Friday, we combine project updates from three spreadsheets to prepare the same internal report.”',offer:'Help teams simplify recurring reporting workflows.',known:'Three spreadsheets are combined weekly for an internal report.',unknown:'Source quality, time spent, permissions, and whether the report needs every field.',fit:'A reporting workflow review may be relevant because the same manual combination repeats each week.',question:'Which parts of the report stay the same each week, and which need someone’s judgement?',draft:'You described combining three spreadsheets for the Friday report. Which parts stay the same each week, and which need someone’s judgement? We work on simplifying recurring reporting workflows and would first want to understand that distinction.',reply:'“Most fields are standard, but the project notes need a person to review them.”',next:'Separate repeatable data collection from the notes that need review. Ask for a non-sensitive description of the report structure before proposing automation.'}};
+let selected='website',step=0,version=0,loading=false;
+const tabs=[...document.querySelectorAll('[role=tab]')],panel=document.getElementById('step-panel'),next=document.getElementById('next-step'),status=document.getElementById('walkthrough-status');
+if(panel){
+const selector=document.getElementById('scenario'),tablist=document.querySelector('[role=tablist]'),compact=matchMedia('(max-width:760px)');
+// A vertical desktop list becomes a horizontal, wrapping list on small screens.
+function syncOrientation(){tablist.setAttribute('aria-orientation',compact.matches?'horizontal':'vertical')}
+syncOrientation();compact.addEventListener('change',syncOrientation);
+selector.disabled=false;
+selected=Object.hasOwn(scenarios,selector.value)?selector.value:'website';
+const titles=['Business brief','Relevance','Message review','Next action'],labels=['Continue to relevance','Continue to message review','Continue to next action','Start again'];
+function render(){
+const s=scenarios[selected];
+const bodies=[
+'<h3>Start with what the business has actually said.</h3><div class="sample-quote">'+s.brief+'</div><dl class="fact-list"><div><dt>Sample offer</dt><dd>'+s.offer+'</dd></div><div><dt>Known from this brief</dt><dd>'+s.known+'</dd></div><div><dt>Still unknown</dt><dd>'+s.unknown+'</dd></div></dl>',
+'<h3>Make the reason for reaching out visible.</h3><p>'+s.fit+'</p><dl class="fact-list"><div><dt>Grounding</dt><dd>Only the fictional brief above supports this example.</dd></div><div><dt>Question to explore</dt><dd>'+s.question+'</dd></div><div><dt>Review before acting</dt><dd>Confirm the context is accurate and that the offer is relevant. There is no evidence here of budget or purchase intent.</dd></div></dl>',
+'<h3>Read the message before it reaches anyone.</h3><div class="sample-quote">'+s.draft+'</div><dl class="fact-list"><div><dt>Review</dt><dd>Check the observation, the question, and whether the offer fits.</dd></div><div><dt>Human decision</dt><dd>Revise, approve, or choose not to contact them. This example sends nothing.</dd></div></dl>',
+'<h3>Let the reply shape the next question.</h3><p class="eyebrow">ILLUSTRATIVE REPLY</p><div class="sample-quote">'+s.reply+'</div><dl class="fact-list"><div><dt>Possible next action</dt><dd>'+s.next+'</dd></div><div><dt>Keep in view</dt><dd>The conversation still needs human judgement. No meeting, purchase, or result is guaranteed.</dd></div></dl>'];
+panel.innerHTML='<p class="eyebrow">0'+(step+1)+' / '+titles[step].toUpperCase()+'</p>'+bodies[step];
+panel.setAttribute('aria-labelledby',tabs[step].id);panel.removeAttribute('aria-busy');next.disabled=false;next.textContent=labels[step];
+tabs.forEach((t,i)=>{t.disabled=false;t.setAttribute('aria-selected',String(i===step));t.tabIndex=i===step?0:-1});status.textContent='Step '+(step+1)+' of 4 · Sample data stays in this page.';
+}
+function go(i){if(loading)return;step=i;render();if(!matchMedia('(prefers-reduced-motion: reduce)').matches){panel.animate([{opacity:.65,transform:'translateY(4px)'},{opacity:1,transform:'translateY(0)'}],{duration:170,easing:'ease-out'})}}
+tabs.forEach((t,i)=>{t.addEventListener('click',()=>go(i));t.addEventListener('keydown',e=>{if(['ArrowDown','ArrowRight','ArrowUp','ArrowLeft','Home','End'].includes(e.key)){e.preventDefault();const j=e.key==='Home'?0:e.key==='End'?3:(i+(['ArrowDown','ArrowRight'].includes(e.key)?1:3))%4;go(j);tabs[j].focus()}})});
+next.addEventListener('click',()=>{go((step+1)%4);panel.focus({preventScroll:true});panel.scrollIntoView({block:"start",behavior:"instant"})});
+selector.addEventListener('change',e=>{if(!Object.hasOwn(scenarios,e.target.value))return;loading=true;selected=e.target.value;step=0;const current=++version;panel.setAttribute('aria-busy','true');next.disabled=true;tabs.forEach(t=>{t.disabled=true});status.textContent='Loading the selected sample…';panel.innerHTML='<p class="loading-note" role="status">Loading sample brief…</p><div aria-hidden="true"><div class="skeleton skeleton-title"></div><div class="skeleton"></div><div class="skeleton"></div><div class="skeleton skeleton-short"></div></div>';setTimeout(()=>{if(current===version){loading=false;render()}},550)});
+render();
+}
+
